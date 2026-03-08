@@ -10,7 +10,6 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;line-height:1.7;overflow-x:hidden}
-
 nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 max(2rem,calc((100vw - 1000px)/2));height:58px;display:flex;align-items:center;justify-content:space-between;background:rgba(248,247,244,0.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
 .nav-logo{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text);letter-spacing:0.2em;text-decoration:none}
 .nav-back{font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);text-decoration:none;letter-spacing:0.08em;transition:color 0.2s}
@@ -19,7 +18,6 @@ main{max-width:700px;margin:0 auto;padding:100px 2rem 8rem}
 .tag{font-family:'DM Mono',monospace;font-size:0.62rem;padding:0.22rem 0.65rem;background:var(--accent-dim);color:var(--accent);border-radius:3px;letter-spacing:0.04em}
 .fade-in{opacity:0;transform:translateY(14px);transition:opacity 0.55s ease,transform 0.55s ease}
 .fade-in.visible{opacity:1;transform:translateY(0)}
-
 .post-meta{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem}
 .post-date{font-family:'DM Mono',monospace;font-size:0.63rem;color:var(--muted);letter-spacing:0.12em;opacity:0.55}
 .post-tags{display:flex;gap:0.4rem;flex-wrap:wrap}
@@ -36,7 +34,7 @@ h1{font-family:'Outfit',sans-serif;font-weight:700;font-size:clamp(1.8rem,4.5vw,
 <body>
 <nav>
   <a href="../index.html" class="nav-logo">S · S</a>
-  <a href="index.html" class="nav-back">← Blog</a>
+  <a href="../index.html#blog" class="nav-back">← Blog</a>
 </nav>
 <main id="main">
   <div id="content"></div>
@@ -44,31 +42,36 @@ h1{font-family:'Outfit',sans-serif;font-weight:700;font-size:clamp(1.8rem,4.5vw,
 <script>
 function fmt(d){return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}
 function block(b){
-  if(b.type==='p') return `<p>${b.text}</p>`;
-  if(b.type==='h3') return `<h3>${b.text}</h3>`;
-  if(b.type==='blockquote') return `<blockquote><p>${b.text}</p></blockquote>`;
+  if(b.type==='p') return '<p>'+b.text+'</p>';
+  if(b.type==='h3') return '<h3>'+b.text+'</h3>';
+  if(b.type==='blockquote') return '<blockquote><p>'+b.text+'</p></blockquote>';
   return '';
 }
 const id = new URLSearchParams(location.search).get('id');
-if(!id){ document.getElementById('content').innerHTML='<p style="color:var(--muted)">No post specified.</p>'; }
-else {
-  fetch('posts.json').then(r=>r.json()).then(posts=>{
-    const p = posts.find(x=>x.id===id);
+if(!id){
+  document.getElementById('content').innerHTML='<p style="color:var(--muted)">No post specified.</p>';
+} else {
+  fetch('posts.json').then(function(r){ return r.json(); }).then(function(posts){
+    const p = posts.find(function(x){ return x.id===id; });
     if(!p){ document.getElementById('content').innerHTML='<p style="color:var(--muted)">Post not found.</p>'; return; }
     document.title = p.title+' — Salaj Sonar';
-    document.getElementById('content').innerHTML = `
-      <div class="post-meta fade-in">
-        <span class="post-date">${fmt(p.date)}</span>
-        <div class="post-tags">${p.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
-      </div>
-      <h1 class="fade-in">${p.title}</h1>
-      <div class="divider"></div>
-      <div class="body fade-in">${p.content.map(block).join('')}</div>
-      <div class="divider"></div>
-      <a href="index.html" class="back-link">← All posts</a>`;
-    const obs=new IntersectionObserver(e=>e.forEach(x=>x.isIntersecting&&x.target.classList.add('visible')),{threshold:0.06});
-    document.querySelectorAll('.fade-in').forEach(el=>obs.observe(el));
-  }).catch(()=>{document.getElementById('content').innerHTML='<p style="color:var(--muted)">Failed to load post.</p>';});
+    document.getElementById('content').innerHTML =
+      '<div class="post-meta fade-in">'
+        +'<span class="post-date">'+fmt(p.date)+'</span>'
+        +'<div class="post-tags">'+p.tags.map(function(t){ return '<span class="tag">'+t+'</span>'; }).join('')+'</div>'
+      +'</div>'
+      +'<h1 class="fade-in">'+p.title+'</h1>'
+      +'<div class="divider"></div>'
+      +'<div class="body fade-in">'+p.content.map(block).join('')+'</div>'
+      +'<div class="divider"></div>'
+      +'<a href="../index.html#blog" class="back-link">← All posts</a>';
+    const obs = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('visible'); });
+    }, {threshold:0.06});
+    document.querySelectorAll('.fade-in').forEach(function(el){ obs.observe(el); });
+  }).catch(function(){
+    document.getElementById('content').innerHTML='<p style="color:var(--muted)">Failed to load post.</p>';
+  });
 }
 </script>
 </body></html>

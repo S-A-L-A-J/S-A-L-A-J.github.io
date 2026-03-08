@@ -1,0 +1,59 @@
+[
+  {
+    "id": "sem-h-why-maps-are-wrong",
+    "title": "Why I think geometric maps are the wrong abstraction for home robots",
+    "date": "2026-03-08",
+    "tags": ["robotics", "navigation", "SeM-H"],
+    "summary": "SLAM gives robots perfect spatial memory. But humans navigate without measuring anything. A working draft of why semantic knowledge might be a better foundation.",
+    "content": [
+      {"type": "p", "text": "When I started working on SeM-H, the first thing I had to convince myself of was that the dominant approach to robot navigation — build a map, localise in it, plan a path — is solving the wrong problem for indoor environments."},
+      {"type": "p", "text": "SLAM systems are genuinely impressive. A TurtleBot with a LiDAR can scan a room, build a centimetre-accurate occupancy grid, and navigate it reliably. But there are two things that always bothered me about this approach for home robots specifically."},
+      {"type": "h3", "text": "The map is brittle in the ways that matter most"},
+      {"type": "p", "text": "A geometric map encodes where the walls are. But in a home, the walls rarely change — the furniture does. A sofa that moved, a door left open that was closed when the map was built, boxes on the floor. All of these require the map to be updated, or the robot gets confused. The things that actually change in a home are exactly the things a geometric map doesn't handle gracefully."},
+      {"type": "h3", "text": "Humans don't do this"},
+      {"type": "p", "text": "When you enter an unfamiliar house and someone asks you to find the kitchen, you don't measure distances. You look around, notice you're in a hallway, follow it toward sounds or smells, see countertops through a doorway, and walk in. You navigate by understanding the semantic structure of the environment — what things mean and where they're likely to be — not by measuring where they geometrically are."},
+      {"type": "p", "text": "SeM-H is an attempt to build a system that navigates the way you do. The bet is that a pretrained Vision-Language Model already contains enough implicit knowledge about how spaces are organised that a robot can use it as a navigation prior — without measuring anything at runtime."},
+      {"type": "h3", "text": "The open technical question"},
+      {"type": "p", "text": "The thing I spend most of my time thinking about is the Bayesian room-belief filter. SigLIP similarity scores are not calibrated probabilities — a score of 0.7 for 'stove' doesn't mean there's a 70% chance a stove is present. Getting the observation model right without empirical calibration is the current open problem. Phase 2 will involve running the system in Gazebo and recording true positive rates for each object label at various thresholds. Whether naive thresholding is enough, or whether something more principled is needed — that's what I'll find out."}
+    ]
+  },
+  {
+    "id": "bezier-opengl-what-clicked",
+    "title": "Building a 3D engine taught me more about math than any course",
+    "date": "2026-03-09",
+    "tags": ["graphics", "C++", "OpenGL", "math"],
+    "summary": "I spent a semester building an OpenGL engine from scratch. The hardest part wasn't the code — it was understanding what Bezier control points are actually doing.",
+    "content": [
+      {"type": "p", "text": "When I started the OpenGL project, I assumed the hard part would be wrestling with C++ and GPU driver quirks. It wasn't. The hard part was math I thought I already knew — specifically, the moment I had to implement Bezier spline animation and realised I had no real intuition for what the control points were doing."},
+      {"type": "h3", "text": "What I thought Bezier curves were"},
+      {"type": "p", "text": "I knew the formula. Given control points P0, P1, P2, P3, the cubic Bezier is B(t) = (1-t)³P0 + 3(1-t)²tP1 + 3(1-t)t²P2 + t³P3. I could evaluate it. What I couldn't do was look at a set of control points and predict what the curve would look like — or more usefully, move a control point in a specific direction and know what would change about the curve."},
+      {"type": "p", "text": "The insight that fixed this: P1 and P2 are not points the curve passes through. They're points the curve is pulled toward. P0 and P3 are the endpoints. P1 controls the tangent direction leaving P0 — the curve departs P0 heading toward P1, but never arrives. P2 does the same for P3 in reverse. Once I saw it that way, the whole thing became manipulable in a way it wasn't before."},
+      {"type": "h3", "text": "The timing problem"},
+      {"type": "p", "text": "Getting the curve shape right was one problem. Getting the animation to feel natural was a different one entirely. The naive approach is to step t uniformly from 0 to 1 and move the object to B(t) each frame. The problem is that Bezier curves don't have uniform arc length — near the endpoints where the curve bends, equal steps in t cover less distance than in the middle of the curve. The result is an object that visibly slows down at the start and end of every spline segment, even if you intended constant speed."},
+      {"type": "p", "text": "The fix is arc-length reparameterisation — precompute a lookup table mapping arc length to t, then instead of stepping t uniformly, step arc length uniformly and look up the corresponding t. It's not complicated once you know it exists. But it's the kind of thing you only discover by noticing that your animation looks wrong and not knowing why."},
+      {"type": "h3", "text": "What actually changed"},
+      {"type": "p", "text": "I've since found that this pattern repeats everywhere in graphics — and honestly in most of engineering. The formal definition of something and the intuition for how to manipulate it are two separate things, and courses tend to give you the former while the latter only comes from building something that breaks in a specific way and having to figure out why. The OpenGL project broke in a lot of specific ways. That's probably why I learned more from it than from any lecture."}
+    ]
+  },
+  {
+    "id": "occlusion-cnn-attention",
+    "title": "We ran the numbers on occlusion. CNNs don't just struggle — they collapse.",
+    "date": "2026-03-10",
+    "tags": ["computer vision", "deep learning", "occlusion", "YOLO"],
+    "summary": "I expected a clean tradeoff: Transformers accurate but slow, YOLO fast but weak under occlusion, OCSA somewhere in the middle. The actual results were more interesting than that.",
+    "content": [
+      {"type": "p", "text": "The project was straightforward enough: build a CV pipeline for detecting vehicle fuel flaps on a robotic refuelling arm, where the arm itself frequently occludes the target. Pick the best architecture. Ship it."},
+      {"type": "p", "text": "My going-in expectation was a clean tradeoff curve. RF-DETR — a Transformer-based detector — would be robust and accurate but slow, unsuitable for real-time control. Vanilla YOLOv11 would be fast but degrade badly under occlusion. YOLOv11-OCSA, which adds occlusion-aware attention modules to the YOLO backbone, would sit somewhere in the middle: better than vanilla YOLO, worse than RF-DETR, but fast enough to actually deploy."},
+      {"type": "p", "text": "That's not what happened."},
+      {"type": "h3", "text": "The CNN result was worse than expected"},
+      {"type": "p", "text": "Vanilla YOLOv11 missed 46.5% of the dataset. Nearly half. At a confidence threshold of 0.50, it produced 1,759 false negatives on 3,783 images. For a robotic arm that needs to locate the fuel flap before it can move, that's not a degraded system — it's a broken one."},
+      {"type": "p", "text": "The reason is structural. CNNs aggregate local features. When the defining features of the fuel flap — the circular rim, the hinge — are covered by the arm or nozzle, there's simply no local pixel evidence for the detector to find. It isn't a matter of tuning the threshold or training more. The information isn't there in the receptive field."},
+      {"type": "h3", "text": "The surprise"},
+      {"type": "p", "text": "RF-DETR recovered most of that — 11% miss rate, F1 of 0.910. Self-attention processes the whole image at once, so the model can use the vehicle fender, body panels, and spatial context to infer the flap's location even when the flap itself is hidden. That part matched expectations."},
+      {"type": "p", "text": "What didn't match expectations was OCSA. It hit 5.1% miss rate and F1 of 0.955 — beating RF-DETR on both metrics — at 105 FPS. RF-DETR runs at 14 FPS. That's not OCSA sitting in the middle of the tradeoff curve. That's OCSA being better on both axes simultaneously."},
+      {"type": "h3", "text": "Why this makes sense in hindsight"},
+      {"type": "p", "text": "OCSA adds channel and spatial attention modules into YOLO's backbone and neck. These let the network suppress occluded regions and up-weight the surrounding context that's still visible — getting much of the benefit of global attention without the quadratic cost of full self-attention. It's a much cheaper computation than running a full Transformer over every patch, and for this specific task — where occlusion is the problem rather than complex scene understanding — it turns out to be enough."},
+      {"type": "p", "text": "The broader point is that the ViT vs CNN framing is too coarse. The question isn't 'which architecture' — it's 'what specifically is the model failing to do, and what's the cheapest fix for that failure mode.' In our case the failure was local feature aggregation under occlusion. Targeted attention modules fixed it. Full self-attention also fixed it, at seven times the latency cost."}
+    ]
+  }
+]

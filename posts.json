@@ -1,0 +1,32 @@
+[
+  {
+    "id": "sem-h-why-maps-are-wrong",
+    "title": "Why I think geometric maps are the wrong abstraction for home robots",
+    "date": "2026-03-08",
+    "tags": ["robotics", "navigation", "SeM-H"],
+    "summary": "SLAM gives robots perfect spatial memory. But humans navigate without measuring anything. A working draft of why semantic knowledge might be a better foundation.",
+    "content": [
+      {"type": "p", "text": "When I started working on SeM-H, the first thing I had to convince myself of was that the dominant approach to robot navigation — build a map, localise in it, plan a path — is solving the wrong problem for indoor environments."},
+      {"type": "p", "text": "SLAM systems are genuinely impressive. A TurtleBot with a LiDAR can scan a room, build a centimetre-accurate occupancy grid, and navigate it reliably. But there are two things that always bothered me about this approach for home robots specifically."},
+      {"type": "h3", "text": "The map is brittle in the ways that matter most"},
+      {"type": "p", "text": "A geometric map encodes where the walls are. But in a home, the walls rarely change — the furniture does. A sofa that moved, a door left open that was closed when the map was built, boxes on the floor. All of these require the map to be updated, or the robot gets confused. The things that actually change in a home are exactly the things a geometric map doesn't handle gracefully."},
+      {"type": "h3", "text": "Humans don't do this"},
+      {"type": "p", "text": "When you enter an unfamiliar house and someone asks you to find the kitchen, you don't measure distances. You look around, notice you're in a hallway, follow it toward sounds or smells, see countertops through a doorway, and walk in. You navigate by understanding the semantic structure of the environment — what things mean and where they're likely to be — not by measuring where they geometrically are."},
+      {"type": "p", "text": "SeM-H is an attempt to build a system that navigates the way you do. The bet is that a pretrained Vision-Language Model already contains enough implicit knowledge about how spaces are organised that a robot can use it as a navigation prior — without measuring anything at runtime."},
+      {"type": "h3", "text": "The open technical question"},
+      {"type": "p", "text": "The thing I spend most of my time thinking about is the Bayesian room-belief filter. SigLIP similarity scores are not calibrated probabilities — a score of 0.7 for 'stove' doesn't mean there's a 70% chance a stove is present. Getting the observation model right without empirical calibration is the current open problem. Phase 2 will involve running the system in Gazebo and recording true positive rates for each object label at various thresholds. Whether naive thresholding is enough, or whether something more principled is needed — that's what I'll find out."}
+    ]
+  },
+  {
+  "id": "unique-slug-no-spaces",
+  "title": "Your title here",
+  "date": "2026-03-10",
+  "tags": ["robotics"],
+  "summary": "One sentence shown on the listing page.",
+  "content": [
+    {"type": "p", "text": "A paragraph."},
+    {"type": "h3", "text": "A section heading"},
+    {"type": "p", "text": "Another paragraph."}
+  ]
+}
+]

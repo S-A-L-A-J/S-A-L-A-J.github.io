@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog — Salaj Sonar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F8F7F4;--bg2:#EFEDE8;--bg3:#E5E3DD;--border:#DEDAD2;--text:#1A1917;--muted:#4A4744;--accent:#2B3D5C;--accent-dim:rgba(43,61,92,0.07)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-weight:300;line-height:1.7;overflow-x:hidden}
+
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 max(2rem,calc((100vw - 1000px)/2));height:58px;display:flex;align-items:center;justify-content:space-between;background:rgba(248,247,244,0.94);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.nav-logo{font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text);letter-spacing:0.2em;text-decoration:none}
+.nav-back{font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);text-decoration:none;letter-spacing:0.08em;transition:color 0.2s}
+.nav-back:hover{color:var(--text)}
+main{max-width:700px;margin:0 auto;padding:100px 2rem 8rem}
+.tag{font-family:'DM Mono',monospace;font-size:0.62rem;padding:0.22rem 0.65rem;background:var(--accent-dim);color:var(--accent);border-radius:3px;letter-spacing:0.04em}
+.fade-in{opacity:0;transform:translateY(14px);transition:opacity 0.55s ease,transform 0.55s ease}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+
+.page-eyebrow{font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--muted);letter-spacing:0.22em;text-transform:uppercase;margin-bottom:1rem;display:flex;align-items:center;gap:0.8rem}
+.page-eyebrow::before{content:'';display:inline-block;width:24px;height:1px;background:var(--border)}
+h1{font-family:'DM Serif Display',serif;font-size:clamp(2rem,5vw,3rem);line-height:1.05;letter-spacing:-0.02em;color:var(--text);margin-bottom:0.5rem}
+.sub{font-size:0.88rem;color:var(--muted);margin-bottom:3rem}
+.post-item{display:block;padding:2rem 0;border-bottom:1px solid var(--border);text-decoration:none;transition:opacity 0.2s}
+.post-item:first-of-type{border-top:1px solid var(--border)}
+.post-item:hover .post-title{color:var(--text)}
+.post-date{font-family:'DM Mono',monospace;font-size:0.63rem;color:var(--muted);letter-spacing:0.12em;opacity:0.55;margin-bottom:0.55rem}
+.post-title{font-family:'DM Serif Display',serif;font-size:1.35rem;color:var(--text);line-height:1.2;margin-bottom:0.55rem;transition:color 0.2s}
+.post-summary{font-size:0.86rem;color:var(--muted);line-height:1.75;margin-bottom:0.75rem}
+.post-tags{display:flex;gap:0.4rem;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<nav>
+  <a href="../index.html" class="nav-logo">S · S</a>
+  <a href="../index.html" class="nav-back">← Home</a>
+</nav>
+<main>
+  <div class="page-eyebrow fade-in">Writing</div>
+  <h1 class="fade-in">Blog</h1>
+  <p class="sub fade-in">Research updates, project writeups, and notes on things I'm learning.</p>
+  <div id="list" class="fade-in"></div>
+</main>
+<script>
+function fmt(d){return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}
+fetch('posts.json').then(r=>r.json()).then(posts=>{
+  posts.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  document.getElementById('list').innerHTML = posts.map(p=>`
+    <a class="post-item" href="post.html?id=${p.id}">
+      <div class="post-date">${fmt(p.date)}</div>
+      <div class="post-title">${p.title}</div>
+      <div class="post-summary">${p.summary}</div>
+      <div class="post-tags">${p.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+    </a>`).join('');
+}).catch(()=>{document.getElementById('list').innerHTML='<p style="color:var(--muted);font-size:0.85rem">No posts yet.</p>';});
+</script>
+<script>
+const obs=new IntersectionObserver(e=>e.forEach(x=>x.isIntersecting&&x.target.classList.add('visible')),{threshold:0.06});
+document.querySelectorAll('.fade-in').forEach(el=>obs.observe(el));
+</script>
+</body></html>

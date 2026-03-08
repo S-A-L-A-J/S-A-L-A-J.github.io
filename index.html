@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Salaj Sonar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #F8F7F4;
@@ -102,21 +102,22 @@
   }
 
   h1 {
-    font-family: 'DM Serif Display', serif;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
     font-size: clamp(3.4rem, 6.5vw, 6rem);
     line-height: 1.0;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
     color: var(--text);
     margin-bottom: 1.2rem;
   }
 
   .hero-tagline {
-    font-family: 'DM Serif Display', serif;
+    font-family: 'DM Sans', sans-serif;
     font-style: italic;
     font-size: clamp(1.1rem, 2vw, 1.4rem);
     color: var(--accent);
     margin-bottom: 1.8rem;
-    font-weight: 400;
+    font-weight: 300;
     opacity: 0.75;
   }
 
@@ -223,8 +224,9 @@
   }
 
   .research-card h3 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.55rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 1.45rem;
     color: var(--text);
     line-height: 1.15;
     margin-bottom: 1.2rem;
@@ -300,8 +302,9 @@
   }
 
   .exp-body h3 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.2rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 1.15rem;
     color: var(--text);
     margin-bottom: 0.3rem;
   }
@@ -351,8 +354,9 @@
   }
 
   .project-card h3 {
-    font-family: 'DM Serif Display', serif;
-    font-size: 1.18rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
     color: var(--text);
     margin-bottom: 0.9rem;
     line-height: 1.2;
@@ -377,8 +381,8 @@
     background: #fff;
   }
   .blog-placeholder .cs {
-    font-family: 'DM Serif Display', serif;
-    font-style: italic;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
     font-size: 2rem;
     color: var(--text);
     opacity: 0.2;
@@ -696,7 +700,7 @@
       var items = posts.slice(0,3).map(function(p){
         return '<a href="blog/post.html?id='+p.id+'" style="display:block;padding:1.6rem 0;border-bottom:1px solid var(--border);text-decoration:none;cursor:pointer">'
           + '<div style="font-family:DM Mono,monospace;font-size:0.62rem;color:var(--muted);opacity:0.55;letter-spacing:0.12em;margin-bottom:0.5rem">'+fmt(p.date)+'</div>'
-          + '<div style="font-family:DM Serif Display,serif;font-size:1.2rem;color:var(--text);line-height:1.2;margin-bottom:0.45rem">'+p.title+'</div>'
+          + '<div style="font-family:Outfit,sans-serif;font-weight:600;font-size:1.1rem;color:var(--text);line-height:1.2;margin-bottom:0.45rem">'+p.title+'</div>'
           + '<div style="font-size:0.84rem;color:var(--muted);line-height:1.7">'+p.summary+'</div>'
           + '</a>';
       }).join('');

@@ -97,8 +97,13 @@
     },
     {
       "type": "img",
-      "src": "images/mic_render.png",
-      "caption": "Left to right: Lego bulldozer, ship, microphone. Note the fog artifact on the bulldozer and noise in the water."
+      "src": "images/ship_render.jpeg",
+      "caption": "Ship reconstruction. The water surface noise is visible — specular, time-varying lighting across training frames that the optimizer never fully resolved."
+    },
+    {
+      "type": "img",
+      "src": "images/mic_render.jpeg",
+      "caption": "Microphone reconstruction. The grille mesh and tripod legs held up cleanly — thin geometry that would blur out in a density-based representation."
     },
     {
       "type": "h3",

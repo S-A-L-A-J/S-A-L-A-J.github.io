@@ -45,6 +45,7 @@ function block(b){
   if(b.type==='p') return '<p>'+b.text+'</p>';
   if(b.type==='h3') return '<h3>'+b.text+'</h3>';
   if(b.type==='blockquote') return '<blockquote><p>'+b.text+'</p></blockquote>';
+  if(b.type==='img') return '<figure style="margin:2rem 0"><img src="'+b.src+'" alt="'+(b.caption||'')+'" style="width:100%;border-radius:6px;border:1px solid var(--border)"><figcaption style="font-family:\'DM Mono\',monospace;font-size:0.62rem;color:var(--muted);margin-top:0.6rem;letter-spacing:0.04em">'+(b.caption||'')+'</figcaption></figure>';
   return '';
 }
 const id = new URLSearchParams(location.search).get('id');

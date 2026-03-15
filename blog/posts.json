@@ -60,84 +60,53 @@
   "id": "3dgs-static-reconstruction",
   "title": "NeRFs are too rigid to animate. Here is why we are betting entirely on explicit Gaussian Splatting.",
   "date": "2026-02-14",
-  "tags": ["3dgs", "gaussian-splatting", "rendering", "gsplat", "pytorch"],
-  "summary": "NeRFs lock the scene inside a neural network — you cannot reach in and move anything. I spent a week fighting PyTorch's computational graph to prove that 3D Gaussian Splatting is the right foundation for animatable avatars. A breakdown of how it actually works, and what I learned building a differentiable renderer from scratch on the Lego bulldozer.",
+  "tags": ["3dgs", "gaussian-splatting", "gsplat", "pytorch"],
+  "summary": "NeRFs lock the scene inside a neural network — you cannot reach in and move anything. A breakdown of why 3DGS is a fundamentally different philosophy, and what I learned building a differentiable renderer from scratch on the NeRF Synthetic dataset.",
   "content": [
     {
       "type": "p",
-      "text": "If you have spent any time trying to build photorealistic 3D humans, you eventually hit the same fundamental constraint with NeRF-based approaches: the scene is locked inside a neural network. You cannot reach in and move anything. For static scene capture that is fine. For an animated talking head that needs to lip-sync to arbitrary audio, it is a dead end."
+      "text": "The core problem with NeRF-based approaches for avatar work is that the scene is locked inside a neural network. You query it with a ray direction, get a colour and density back, and that is it. There is no spatial data structure you can reach into. No way to select the jaw region and apply a rotation. For static capture this is fine. For a talking head that needs to lip-sync to arbitrary audio, it is a dead end."
     },
     {
       "type": "p",
-      "text": "This is why my first task was to get a clean 3D Gaussian Splatting pipeline working from scratch. Not to run a pre-packaged script — I needed to understand the math well enough to later bend it toward our animation use case. The test subject was the Lego bulldozer from the standard NeRF Synthetic dataset. Classic hello world. Around 100 training images, local GPU, no cloud resources yet. Prove the math works, then scale."
+      "text": "3DGS is a completely different philosophy. The scene is represented as an explicit point cloud of Gaussian primitives — each with a 3D position, a covariance matrix defining its shape, an opacity, and a colour. It is all sitting in a tensor you can index and manipulate directly. I can write code to grab every Gaussian in the jaw region and move them. That is the entire reason we are building on this foundation."
     },
     {
       "type": "h3",
-      "text": "Why 3DGS is not just a faster NeRF"
+      "text": "Building it from scratch"
     },
     {
       "type": "p",
-      "text": "The framing I keep seeing is that Gaussian Splatting is a NeRF variant that trades quality for speed. This is wrong, and the distinction matters enormously for our use case. A NeRF is implicit — a neural network encodes the entire scene into its weights, and you query it with a ray direction to get a colour and density back. The scene is implicit knowledge baked into billions of floating-point numbers. There is no list of objects, no spatial data structure you can reach into, no way to grab the jaw region and move it."
-    },
-    {
-      "type": "p",
-      "text": "3DGS is explicit. It represents the scene as a point cloud of individual Gaussian primitives, each with a 3D position, a covariance matrix that defines its shape and orientation, an opacity, and a colour. The scene is not hidden inside a network — it is right there in a tensor you can index into, slice, and manipulate. This is the reason the approach is viable for avatar animation. I can write code to select all Gaussians within a spatial region corresponding to the jaw, and apply a rotation matrix to them. The analogy I keep coming back to: 3DGS is closer to a particle engine in a game engine than it is to a traditional neural network."
+      "text": "I used gsplat for the CUDA rasterization, but everything else — initialization, parameter handling, optimizer, loss — I wrote myself in PyTorch. The two things that cost me the most time: first, Gaussian parameters like scale and opacity cannot be stored as raw floats. Scale must stay positive, opacity must stay in [0,1]. The fix is to store them in unconstrained space and apply exp and sigmoid at query time. Second, applying those activations before registering parameters with the optimizer creates non-leaf tensors that PyTorch refuses to track. You register the raw values, activate at forward pass time. Both feel obvious once you understand them and completely opaque when you don't."
     },
     {
       "type": "h3",
-      "text": "Building the differentiable optimization loop"
+      "text": "The moment it clicked"
     },
     {
       "type": "p",
-      "text": "The gsplat library handles the low-level CUDA projection and rasterization, but everything around it — initialization, parameter handling, the optimizer, the loss — I built from scratch using PyTorch. This decision turned out to be the right one, because the bugs I hit taught me things a pre-packaged script would have hidden."
-    },
-    {
-      "type": "p",
-      "text": "The first design decision that took me time to understand is why Gaussian parameters cannot be stored naively as raw numbers. Scale must be strictly positive — a Gaussian with negative scale is geometrically undefined. Opacity must live in [0, 1]. If you store these as raw floats and let gradient descent update them freely, they will leave valid ranges within a few hundred iterations and your rasterizer will produce nonsense or crash. The solution is to store the parameters in an unconstrained space and apply a non-linearity at query time: exponential for scale (exp maps all of ℝ to positive reals), sigmoid for opacity (sigmoid maps all of ℝ to (0,1)). These are called parameter activations, and they are not optional."
-    },
-    {
-      "type": "p",
-      "text": "The second lesson arrived as a cryptic non-leaf tensor crash from PyTorch. When you apply a function like torch.exp() to a parameter before registering it with the optimizer, PyTorch creates a new computation graph node. That node is not a leaf — it is an intermediate result. The optimizer only tracks leaf tensors. The fix is to register the raw unconstrained parameters as the leaf tensors, and apply the activations at the moment you pass values to the rasterizer. It sounds obvious in retrospect. It cost me an afternoon."
+      "text": "Before the 3D Lego model I built a 2D toy version. Loss flatlined at 0.0026, black screen. The Gaussians had initialized in dead space with near-zero opacity — no rendered contribution, no gradient, no movement. The fix was learning rate grouping: positions move fast to escape dead regions, colours and opacity update slowly once a Gaussian has found useful territory. The moment I applied it, a fuzzy cloud snapped into a clean shape in a few hundred iterations. That is when the whole framework made physical sense — not neurons learning a representation, but semi-transparent stickers being pushed into place by gradient descent."
     },
     {
       "type": "h3",
-      "text": "The flatline and the breakthrough"
+      "text": "Three objects, three different failure modes"
     },
     {
       "type": "p",
-      "text": "Before I moved to the Lego model, I built a 2D toy example to validate the optimization logic: a cloud of 2D Gaussians trying to fit a target shape. The loss flatlined at 0.0026 within the first hundred steps. The screen was black. No visible output."
+      "text": "The bulldozer had a white fog artifact around it — large, nearly transparent Gaussians in free space that never received a strong enough gradient to be pruned. The ship had noise in the water regions: specular, time-varying lighting across training frames defeats a representation that learns fixed colours per Gaussian. The microphone was the cleanest result of the three. Thin geometry — the grille mesh, the stand — is exactly where density-based implicit representations blur out. Here, thin structures are just a few elongated Gaussians oriented along them. No averaging, no blur."
     },
     {
-      "type": "p",
-      "text": "The Gaussians had initialized in regions with zero gradient signal. When a Gaussian's opacity is near zero and it is far from any part of the target, its rendered contribution to the loss is essentially zero. No contribution, no gradient, no movement. They were stuck. The fix was learning rate grouping: give position parameters an aggressively high learning rate so they can escape dead regions quickly, while colour and opacity parameters update more slowly and stabilize once a Gaussian has found useful territory. The moment I applied this, the fuzzy cloud of points snapped into the target shape within a few hundred iterations. It was the first moment the whole framework made physical sense to me — these are not neurons learning a representation, they are semi-transparent stickers being physically pushed and reshaped by gradient descent until they collectively recreate the light field of the scene."
+      "type": "img",
+      "src": "images/mic_render.png",
+      "caption": "Left to right: Lego bulldozer, ship, microphone. Note the fog artifact on the bulldozer and noise in the water."
     },
     {
       "type": "h3",
-      "text": "The Lego, the ship, and the microphone"
+      "text": "What comes next"
     },
     {
       "type": "p",
-      "text": "On the full 3D reconstructions, each object presented different challenges. The bulldozer converged to a recognizable model, but a persistent white fog remained around the structure. This is a known artifact caused by Gaussians that are large, nearly transparent, and positioned in free space — they contribute a small amount of brightness uniformly across the frame and never receive a strong enough gradient to be pruned or repositioned. Tuning the densification and pruning thresholds is the standard fix, but I left it as-is for this iteration since the core geometry was solid."
-    },
-    {
-      "type": "p",
-      "text": "The ship had a different problem: the water surrounding it in the reference images introduces a texture that is non-deterministically lit across frames. Gaussian Splatting has no explicit model for dynamic or specular surfaces — each Gaussian learns a fixed colour, or a view-dependent colour via spherical harmonics, but genuinely time-varying brightness defeats the optimizer. The Gaussians in the water region never settled. Some noise in the reconstruction was unavoidable."
-    },
-    {
-      "type": "p",
-      "text": "The microphone was the cleanest result. Thin geometric structures — the capsule housing, the stand, the grille mesh — are exactly where implicit representations struggle. A NeRF's density field blurs across thin geometry because the ray marching samples on both sides of a thin structure and averages them together. The Gaussian representation has no such constraint: a thin structure is simply a set of elongated, low-opacity Gaussians oriented along it. No averaging, no blur. The explicit geometry wins."
-    },
-    {
-      "type": "h3",
-      "text": "Why this matters for what comes next"
-    },
-    {
-      "type": "p",
-      "text": "The static reconstruction pipeline is a means to an end. The reason we are building on 3DGS rather than on any NeRF-based approach is that the explicit Gaussian representation is the only one that admits the kind of spatial manipulation our animation pipeline requires. Once you have a trained Gaussian point cloud of a human face, you have something you can deform. You can learn a mapping from audio features to Gaussian displacements. You can model the jaw, the lips, and the cheeks as regions of the point cloud that move in response to speech. None of that is tractable in an implicit representation."
-    },
-    {
-      "type": "p",
-      "text": "The Lego bulldozer was the proof of concept. The math works. The optimizer converges. The pipeline is in place. The interesting work starts now."
+      "text": "The static pipeline was a proof of concept. The math works, the optimizer converges, the explicit representation behaves the way the theory says it should. The reason this matters is that a trained Gaussian point cloud of a human face is something you can deform. You can learn a mapping from audio to Gaussian displacements, model the lips and jaw as spatial regions that move with speech. That is where this is going. The interesting work starts now."
     }
   ]
 }
